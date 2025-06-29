@@ -1,14 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
+﻿using System.Text.Json;
 
 namespace scrbl
 {
     internal class ConfigManager
     {
+        private static readonly JsonSerializerOptions s_writeOptions = new() { WriteIndented = true };
+
         private static readonly string ConfigPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "scrbl",
@@ -19,9 +16,9 @@ namespace scrbl
             var fullNotesPath = Path.Combine(path, "scrbl.md");
 
             var config = new { NotesFilePath = fullNotesPath };
-            var json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
-
-            Directory.CreateDirectory(Path.GetDirectoryName(ConfigPath));
+            var json = JsonSerializer.Serialize(config, s_writeOptions);
+            var configDir = Path.GetDirectoryName(ConfigPath) ?? throw new InvalidOperationException("Could not determine config directory.");
+            Directory.CreateDirectory(configDir);
 
             Directory.CreateDirectory(path);
 
@@ -43,7 +40,9 @@ namespace scrbl
 
             var json = File.ReadAllText(ConfigPath);
             var config = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
-            return config["NotesFilePath"];
+            return  (config == null || !config.ContainsKey("NotesFile"))
+                ? throw new InvalidOperationException("Invalid configuration file")
+                : config["NotesFilePath"];
         }
     }
 }

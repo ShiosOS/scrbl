@@ -1,26 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.CommandLine;
-using System.Configuration;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
+﻿using System.CommandLine;
 
 namespace scrbl
 {
     internal class ScrblCli
     {
-        public int Run(string[] args)
+        public static int Run(string[] args)
         {
             var rootcommand = BuildRootCommand();
             return rootcommand.Parse(args).Invoke();
         }
 
-        private RootCommand BuildRootCommand()
+        private static RootCommand BuildRootCommand()
         {
-            var rootCommand = new RootCommand("Scrbl");
-            rootCommand.Add(SetupCommand());
+            var rootCommand = new RootCommand("Scrbl")
+            {
+                SetupCommand()
+            };
             return rootCommand;
         }
 
@@ -56,6 +51,5 @@ namespace scrbl
 
             return command;
         }
-
     }
 }
