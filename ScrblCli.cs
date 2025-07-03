@@ -1,4 +1,5 @@
 ﻿using System.CommandLine;
+using Spectre.Console;
 
 namespace scrbl
 {
@@ -6,8 +7,8 @@ namespace scrbl
     {
         public static int Run(string[] args)
         {
-            var rootcommand = BuildRootCommand();
-            return rootcommand.Parse(args).Invoke();
+            var rootCommand = BuildRootCommand();
+            return rootCommand.Parse(args).Invoke();
         }
 
         private static RootCommand BuildRootCommand()
@@ -28,23 +29,48 @@ namespace scrbl
             command.SetAction(parseResult =>
             {
                 var path = parseResult.GetValue(pathArg);
-                Console.WriteLine($"Received path: {path}");
+                
+                AnsiConsole.Write(
+                    new FigletText("Scrbl")
+                        .LeftJustified()
+                        .Color(Color.Pink1));
 
                 if (!string.IsNullOrEmpty(path))
                 {
                     try
                     {
-                        ConfigManager.SaveNotesPath(path);
-                        Console.WriteLine($"✓ Notes file configured: {Path.GetFullPath(path)}");
+                        AnsiConsole.Status()
+                            .Start("Setting up notes directory...", ctx =>
+                            {
+                                ctx.Spinner(Spinner.Known.Star);
+                                ctx.SpinnerStyle(Style.Parse("green"));
+                                
+                                ConfigManager.SaveNotesPath(path);
+                            });
+
+                        AnsiConsole.MarkupLine($"[green]✓[/] Notes configured successfully!");
+                        AnsiConsole.MarkupLine($"[dim]Location:[/] {Path.GetFullPath(path)}");
+                        
+                        var panel = new Panel(
+                            "[yellow]Next steps:[/]\n" +
+                            "• Use [cyan]scrbl write[/] to add new notes\n" +
+                            "• Use [cyan]scrbl read[/] to view your notes")
+                            .Header("Getting Started")
+                            .Border(BoxBorder.Rounded)
+                            .BorderColor(Color.Green);
+                        
+                        AnsiConsole.Write(panel);
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Error: {ex.Message}");
+                        AnsiConsole.MarkupLine($"[red]✗ Error:[/] {ex.Message}");
+                        return 1;
                     }
                 }
                 else
                 {
-                    Console.WriteLine("No path provided");
+                    AnsiConsole.MarkupLine("[yellow]⚠[/] No path provided");
+                    return 1;
                 }
                 return 0;
             });
