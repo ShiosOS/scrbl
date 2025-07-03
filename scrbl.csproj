@@ -5,8 +5,12 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>scrbl</ToolCommandName>
+    <PackageOutputPath>./scrbl</PackageOutputPath>
   </PropertyGroup>
-
+  
   <ItemGroup>
     <PackageReference Include="Spectre.Console" Version="0.50.1-preview.0.20" />
     <PackageReference Include="Spectre.Console.Cli" Version="0.50.0" />
