@@ -2,9 +2,9 @@
 
 namespace scrbl
 {
-    internal class ConfigManager
+    internal static class ConfigManager
     {
-        private static readonly JsonSerializerOptions s_writeOptions = new() { WriteIndented = true };
+        private static readonly JsonSerializerOptions SWriteOptions = new() { WriteIndented = true };
 
         private static readonly string ConfigPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -16,33 +16,48 @@ namespace scrbl
             var fullNotesPath = Path.Combine(path, "scrbl.md");
 
             var config = new { NotesFilePath = fullNotesPath };
-            var json = JsonSerializer.Serialize(config, s_writeOptions);
-            var configDir = Path.GetDirectoryName(ConfigPath) ?? throw new InvalidOperationException("Could not determine config directory.");
-            Directory.CreateDirectory(configDir);
+            var json = JsonSerializer.Serialize(config, SWriteOptions);
+            var configDir = Path.GetDirectoryName(ConfigPath) ??
+                            throw new InvalidOperationException("Could not determine config directory.");
 
+            Directory.CreateDirectory(configDir);
             Directory.CreateDirectory(path);
 
             if (!File.Exists(fullNotesPath))
             {
-                var initialContent = "# Notes\n\n";
+                const string initialContent = "# 📝 My Notes\n\nWelcome to your notes! Use `scrbl write` to add new entries.\n\n";
                 File.WriteAllText(fullNotesPath, initialContent);
             }
 
             File.WriteAllText(ConfigPath, json);
         }
 
-        public static string LoadNotesPath()
+        private static string LoadNotesPath()
         {
             if (!File.Exists(ConfigPath))
             {
-                throw new InvalidOperationException("No file configued, Run setup command");
+                throw new InvalidOperationException("No notes file configured. Run 'scrbl setup <path>' first.");
             }
 
             var json = File.ReadAllText(ConfigPath);
             var config = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
-            return  (config == null || !config.ContainsKey("NotesFile"))
+
+            return (config == null || !config.TryGetValue("NotesFilePath", out var value))
                 ? throw new InvalidOperationException("Invalid configuration file")
-                : config["NotesFilePath"];
+                : value;
+        }
+
+        public static bool IsConfigured()
+        {
+            try
+            {
+                LoadNotesPath();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }
