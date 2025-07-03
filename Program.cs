@@ -12,6 +12,11 @@ internal static class Program
         app.Configure(config =>
         {
             config.AddCommand<SetupCommand>("setup").WithDescription("Configure note path");
+            
+            config.AddCommand<CreateCommand>("create")
+                .WithDescription("Create a templated section")
+                .WithExample(new[] { "create", "-d" })
+                .WithExample(new[] { "create", "--template", "daily" });
         });
         
         return app.Run(args);

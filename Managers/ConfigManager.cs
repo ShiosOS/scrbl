@@ -32,7 +32,7 @@ namespace scrbl
             File.WriteAllText(ConfigPath, json);
         }
 
-        private static string LoadNotesPath()
+        public static string LoadNotesPath()
         {
             if (!File.Exists(ConfigPath))
             {
