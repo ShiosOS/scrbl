@@ -15,8 +15,8 @@ internal static class Program
             
             config.AddCommand<CreateCommand>("create")
                 .WithDescription("Create a templated section")
-                .WithExample(new[] { "create", "-d" })
-                .WithExample(new[] { "create", "--template", "daily" });
+                .WithExample("create", "-d")
+                .WithExample("create", "--template", "daily");
         });
         
         return app.Run(args);

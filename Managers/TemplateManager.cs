@@ -1,21 +1,21 @@
-﻿namespace scrbl
+﻿namespace scrbl.Managers
 {
-    internal class TemplateManager
+    internal static class TemplateManager
     {
-        public static Dictionary<string, TemplateInfo> Templates { get; set; } = new()
+        private static Dictionary<string, TemplateInfo> Templates { get; set; } = new()
         {
             ["daily"] = new TemplateInfo
             {
                 Template = new Template
                 {
                     Header = "## {date:yyyy.MM.dd}",
-                    Sections = new[] 
-                    { 
+                    Sections =
+                    [
                         "### Daily Summary"
-                    }
+                    ]
                 },
                 Description = "Daily planning template",
-                Flags = new[] { "-d", "--daily" }
+                Flags = ["-d", "--daily"]
             }
         };
 
@@ -60,17 +60,17 @@
             return input.Replace("{date:yyyy.MM.dd}", date.ToString("yyyy.MM.dd"));
         }
 
-        public class Template
+        private class Template
         {
             public string Header { get; set; } = string.Empty;
-            public string[] Sections { get; set; } = Array.Empty<string>();
+            public string[] Sections { get; set; } = [];
         }
 
-        public class TemplateInfo
+        private class TemplateInfo
         {
             public Template Template { get; set; } = new();
             public string Description { get; set; } = string.Empty;
-            public string[] Flags { get; set; } = Array.Empty<string>();
+            public string[] Flags { get; set; } = [];
         }
     }
 }
