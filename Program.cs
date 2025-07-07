@@ -17,6 +17,10 @@ internal static class Program
                 .WithDescription("Create a templated section")
                 .WithExample("create", "-d")
                 .WithExample("create", "--template", "daily");
+
+            config.AddCommand<WriteCommand>("write")
+                .WithDescription("Write to the notes file")
+                .WithExample("write", "-w");
         });
         
         return app.Run(args);
