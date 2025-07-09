@@ -47,7 +47,7 @@ scrbl edit --editor code                      # Use specific editor
 # Clone and build
 git clone <your-repo-url>
 cd scrbl
-dotnet pack -c Release
+dotnet pack
 
 # Install globally
 dotnet tool install --global --add-source ./scrbl scrbl
@@ -123,18 +123,6 @@ Templates support date placeholders like `{date:yyyy.MM.dd}` and can include mul
 your-notes/
 ├── scrbl.md                    # Your main notes file
 └── scrbl.md.scrbl-index        # Cached index (auto-generated)
-```
-
-## Development
-
-### Building
-```bash
-dotnet build -c Release
-```
-
-### Packaging
-```bash
-dotnet pack -c Release
 ```
 
 ## Configuration
