@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using scrbl.Managers;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -28,6 +29,9 @@ public class EditCommand : Command<EditCommand.Settings>
 
         try
         {
+            var notesFile = new NotesFileManager(filePath);
+            notesFile.InvalidateIndex();
+            
             AnsiConsole.MarkupLine($"[green]Opening {filePath}...[/]");
             
             var (fileName, arguments) = GetShellCommand(editor, filePath);
@@ -54,9 +58,15 @@ public class EditCommand : Command<EditCommand.Settings>
             
             var exitCode = process.ExitCode;
 
-            AnsiConsole.MarkupLine(exitCode == 0
-                ? "[green]Notes saved successfully![/]"
-                : $"[yellow]Editor exited with code {exitCode}[/]");
+            if (exitCode == 0)
+            {
+                AnsiConsole.MarkupLine("[green]Notes saved successfully![/]");
+                AnsiConsole.MarkupLine("[dim]Index will be rebuilt on next access[/]");
+            }
+            else
+            {
+                AnsiConsole.MarkupLine($"[yellow]Editor exited with code {exitCode}[/]");
+            }
 
             return 0;
         }

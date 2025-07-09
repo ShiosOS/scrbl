@@ -2,31 +2,15 @@
 {
     internal static class TemplateManager
     {
-        private static Dictionary<string, TemplateInfo> Templates { get; set; } = new()
-        {
-            ["daily"] = new TemplateInfo
-            {
-                Template = new Template
-                {
-                    Header = "## {date:yyyy.MM.dd}",
-                    Sections =
-                    [
-                        "### Daily Summary"
-                    ]
-                },
-                Description = "Daily planning template",
-                Flags = ["-d", "--daily"]
-            }
-        };
-
         public static string GenerateTemplate(string templateName, DateTime date)
         {
-            if (!Templates.TryGetValue(templateName, out var templateInfo))
+            var config = ConfigManager.LoadConfig();
+            
+            if (!config.Templates.TryGetValue(templateName, out var template))
             {
                 throw new ArgumentException($"Template '{templateName}' not found");
             }
 
-            var template = templateInfo.Template;
             var header = FormatDatePlaceholders(template.Header, date);
             var output = new List<string> { header };
 
@@ -38,39 +22,49 @@
 
         public static IEnumerable<string> GetAvailableTemplateNames()
         {
-            return Templates.Keys;
-        }
-
-        public static IEnumerable<(string flags, string name, string description)> GetTemplateDisplayInfo()
-        {
-            return Templates.Select(kvp => (
-                flags: string.Join(", ", kvp.Value.Flags),
-                name: kvp.Key,
-                description: kvp.Value.Description
-            ));
+            var config = ConfigManager.LoadConfig();
+            return config.Templates.Keys;
         }
 
         public static bool TemplateExists(string templateName)
         {
-            return Templates.ContainsKey(templateName);
+            var config = ConfigManager.LoadConfig();
+            return config.Templates.ContainsKey(templateName);
+        }
+        
+        public static void AddTemplate(string name, string header, List<string>? sections = null)
+        {
+            var config = ConfigManager.LoadConfig();
+            
+            config.Templates[name] = new Template
+            {
+                Name = name,
+                Header = header,
+                Sections = sections ?? new List<string>()
+            };
+
+            ConfigManager.SaveConfig(config);
+        }
+
+        public static void RemoveTemplate(string name)
+        {
+            var config = ConfigManager.LoadConfig();
+            
+            if (config.Templates.Remove(name))
+            {
+                ConfigManager.SaveConfig(config);
+            }
+        }
+
+        public static Template? GetTemplate(string templateName)
+        {
+            var config = ConfigManager.LoadConfig();
+            return config.Templates.GetValueOrDefault(templateName);
         }
 
         private static string FormatDatePlaceholders(string input, DateTime date)
         {
             return input.Replace("{date:yyyy.MM.dd}", date.ToString("yyyy.MM.dd"));
-        }
-
-        private class Template
-        {
-            public string Header { get; set; } = string.Empty;
-            public string[] Sections { get; set; } = [];
-        }
-
-        private class TemplateInfo
-        {
-            public Template Template { get; set; } = new();
-            public string Description { get; set; } = string.Empty;
-            public string[] Flags { get; set; } = [];
         }
     }
 }

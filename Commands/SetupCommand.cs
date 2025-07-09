@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using scrbl.Managers;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -20,9 +21,10 @@ namespace scrbl.Commands
                 new FigletText("Scrbl")
                     .LeftJustified()
                     .Color(Color.Pink1));
+            
             if (string.IsNullOrEmpty(settings.Path))
             {
-                AnsiConsole.MarkupLine("[bold red]SError:[/] Path is required");
+                AnsiConsole.MarkupLine("[bold red]Error:[/] Path is required");
                 return 1;
             }
 
@@ -35,15 +37,19 @@ namespace scrbl.Commands
                         ctx.SpinnerStyle(Style.Parse("green"));
 
                         ConfigManager.SaveNotesPath(settings.Path);
+                        
+                        NotesIndexManager.CleanupOldIndexes(settings.Path);
                     });
 
                 AnsiConsole.MarkupLine($"[green]✓[/] Notes configured successfully!");
                 AnsiConsole.MarkupLine($"[dim]Location:[/] {Path.GetFullPath(settings.Path)}");
+                AnsiConsole.MarkupLine($"[dim]Config includes default 'daily' template[/]");
 
                 var panel = new Panel(
                         "[yellow]Next steps:[/]\n" +
-                        "• Use [cyan]scrbl write[/] to add new notes\n" +
-                        "• Use [cyan]scrbl read[/] to view your notes")
+                        "• Use [cyan]scrbl create -d[/] to create daily template\n" +
+                        "• Use [cyan]scrbl write \"content\"[/] to add new notes\n" +
+                        "• Use [cyan]scrbl edit[/] to edit your notes")
                     .Header("Getting Started")
                     .Border(BoxBorder.Rounded)
                     .BorderColor(Color.Green);
@@ -53,11 +59,9 @@ namespace scrbl.Commands
             }
             catch (Exception ex)
             {
-                AnsiConsole.MarkupLine($"[red]x Error:[/] {ex.Message}");
+                AnsiConsole.MarkupLine($"[red]✗ Error:[/] {ex.Message}");
                 return 1;
             }
         }
     }
 }
-
-    
