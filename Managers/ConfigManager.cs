@@ -1,5 +1,4 @@
-﻿using System.Collections.Specialized;
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace scrbl.Managers
 {
@@ -21,7 +20,7 @@ namespace scrbl.Managers
                 NotesFilePath = fullNotesPath,
                 Templates = GetDefaultTemplates()
             };
-            
+
             var json = JsonSerializer.Serialize(config, SWriteOptions);
             var configDir = Path.GetDirectoryName(ConfigPath) ??
                             throw new InvalidOperationException("Could not determine config directory.");
@@ -50,17 +49,17 @@ namespace scrbl.Managers
             {
                 throw new InvalidOperationException("No config file configured.");
             }
-            
+
             var json = File.ReadAllText(ConfigPath);
             var config = JsonSerializer.Deserialize<Config>(json);
-            
+
             return config ?? throw new InvalidOperationException("Invalid configuration file.");
         }
         public static void SaveConfig(Config config)
         {
-            var json =  JsonSerializer.Serialize(config, SWriteOptions);
+            var json = JsonSerializer.Serialize(config, SWriteOptions);
             var configDir = Path.GetDirectoryName(ConfigPath) ?? throw new InvalidOperationException("Could not determine config directory.");
-            
+
             Directory.CreateDirectory(configDir);
             File.WriteAllText(ConfigPath, json);
         }
@@ -102,6 +101,6 @@ namespace scrbl.Managers
     {
         public string Name { get; set; } = string.Empty;
         public string Header { get; set; } = string.Empty;
-        public List<string> Sections { get; set; } = new();
+        public List<string> Sections { get; set; } = [];
     }
 }
