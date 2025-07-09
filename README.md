@@ -45,7 +45,7 @@ scrbl edit --editor code                      # Use specific editor
 ### Install as .NET Global Tool
 ```bash
 # Clone and build
-git clone <your-repo-url>
+git clone https://github.com/ShiosOS/scrbl.git
 cd scrbl
 dotnet pack
 
