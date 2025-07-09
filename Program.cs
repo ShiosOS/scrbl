@@ -19,8 +19,10 @@ internal static class Program
                 .WithExample("create", "--template", "daily");
 
             config.AddCommand<WriteCommand>("write")
-                .WithDescription("Write to the notes file")
-                .WithExample("write", "-w");
+                .WithDescription("Write to the notes file");
+
+            config.AddCommand<EditCommand>("edit")
+                .WithDescription("Edit notes in text editor - defaults to nvim");
         });
         
         return app.Run(args);
