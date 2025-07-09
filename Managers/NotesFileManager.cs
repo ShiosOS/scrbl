@@ -51,7 +51,10 @@ namespace scrbl.Managers
 
         public void AppendTemplate(string templateContent)
         {
-            File.AppendAllText(filePath, templateContent);
+            var needsNewline = File.Exists(filePath) && new FileInfo(filePath).Length > 0 && !File.ReadAllText(filePath).EndsWith('\n');
+            var contentToAppend = needsNewline ? "\n" + templateContent : templateContent;
+            
+            File.AppendAllText(filePath, contentToAppend);
             // Reload lines after template addition
             _lines = File.ReadAllText(filePath).Split(["\r\n", "\n"], StringSplitOptions.None).ToList();
             
@@ -61,7 +64,7 @@ namespace scrbl.Managers
 
         public void Save()
         {
-            File.WriteAllText(filePath, string.Join(Environment.NewLine, _lines));
+            File.WriteAllText(filePath, string.Join("\n", _lines));
             
             // Update the saved index timestamp to match file
             UpdateIndexTimestamp();
@@ -145,6 +148,11 @@ namespace scrbl.Managers
         private int FindContentInsertionPoint(int headerIndex)
         {
             var insertIndex = headerIndex + 1;
+            
+            while (insertIndex < _lines.Count && string.IsNullOrWhiteSpace(_lines[insertIndex]))
+            {
+                insertIndex++;
+            }
             
             while (insertIndex < _lines.Count && 
                    !_lines[insertIndex].StartsWith("## ") && 

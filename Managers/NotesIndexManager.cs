@@ -1,8 +1,12 @@
-﻿using System.Text.Json;
-using Spectre.Console;
+﻿using Spectre.Console;
+using System.Text.Json;
 
 namespace scrbl.Managers
 {
+    /// <summary>
+    /// Manages the persistence and lifecycle of notes indexes.
+    /// Handles saving/loading index data to/from disk as JSON files.
+    /// </summary>
     internal static class NotesIndexManager
     {
         private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
@@ -31,9 +35,9 @@ namespace scrbl.Managers
                 var json = JsonSerializer.Serialize(index, JsonOptions);
                 File.WriteAllText(indexPath, json);
             }
-            catch
+            catch (Exception ex)
             {
-                // ignored
+                AnsiConsole.MarkupLine($"[yellow]Warning: Could not save index file: {ex.Message}[/]");
             }
         }
 
@@ -66,7 +70,10 @@ namespace scrbl.Managers
                             File.Delete(indexFile);
                             AnsiConsole.MarkupLine($"[dim]Cleaned up old index: {Path.GetFileName(indexFile)}[/]");
                         }
-                        catch { /* Ignore cleanup errors */ }
+                        catch (Exception ex)
+                        {
+                            AnsiConsole.MarkupLine($"[red]Error deleting index file {Path.GetFileName(indexFile)}: {ex.Message}[/]");
+                        }
                     }
                 }
             }
@@ -85,7 +92,7 @@ namespace scrbl.Managers
             _headers = [];
             _sections = [];
             _wordIndex = new Dictionary<string, List<int>>();
-            
+
             BuildIndex(lines);
         }
 
@@ -96,6 +103,11 @@ namespace scrbl.Managers
             _wordIndex = wordIndex;
         }
 
+        /// <summary>
+        /// Creates a NotesIndex from a saved PersistentNotesIndex.
+        /// </summary>
+        /// <param name="persistent">The persistent index loaded from disk</param>
+        /// <returns>A working NotesIndex instance</returns>
         public static NotesIndex FromPersistent(PersistentNotesIndex persistent)
         {
             return new NotesIndex(persistent.Headers, persistent.Sections, persistent.WordIndex);
@@ -110,10 +122,10 @@ namespace scrbl.Managers
         {
             var nextHeaderIndex = _headers.FindIndex(h => h.LineIndex > header.LineIndex && h.Level == 2);
             var searchEnd = nextHeaderIndex == -1 ? int.MaxValue : _headers[nextHeaderIndex].LineIndex;
-            
-            return _sections.FirstOrDefault(s => 
-                s.LineIndex > header.LineIndex && 
-                s.LineIndex < searchEnd && 
+
+            return _sections.FirstOrDefault(s =>
+                s.LineIndex > header.LineIndex &&
+                s.LineIndex < searchEnd &&
                 s.Text == sectionText);
         }
 
@@ -121,58 +133,70 @@ namespace scrbl.Managers
 
         public void InsertLineAt(int lineIndex, string content)
         {
-            // 1. Shift all headers after the insertion point
+            ShiftHeadersAfterInsertion(lineIndex);
+            ShiftSectionsAfterInsertion(lineIndex);
+            ShiftWordIndexAfterInsertion(lineIndex);
+
+            IndexWordsInLine(content, lineIndex);
+            AddStructuralElementsIfNeeded(content, lineIndex);
+        }
+
+        // Helper methods for InsertLineAt to improve readability
+
+        private void ShiftHeadersAfterInsertion(int insertionIndex)
+        {
             for (var i = 0; i < _headers.Count; i++)
             {
-                if (_headers[i].LineIndex >= lineIndex)
+                if (_headers[i].LineIndex >= insertionIndex)
                 {
                     _headers[i] = _headers[i] with { LineIndex = _headers[i].LineIndex + 1 };
                 }
             }
+        }
 
-            // 2. Shift all sections after the insertion point
+        private void ShiftSectionsAfterInsertion(int insertionIndex)
+        {
             for (var i = 0; i < _sections.Count; i++)
             {
-                if (_sections[i].LineIndex >= lineIndex)
+                if (_sections[i].LineIndex >= insertionIndex)
                 {
                     _sections[i] = _sections[i] with { LineIndex = _sections[i].LineIndex + 1 };
                 }
             }
+        }
 
-            // 3. Shift all word index line numbers
+        private void ShiftWordIndexAfterInsertion(int insertionIndex)
+        {
             var keysToUpdate = _wordIndex.Keys.ToList();
             foreach (var key in keysToUpdate)
             {
                 var lines = _wordIndex[key];
                 for (var i = 0; i < lines.Count; i++)
                 {
-                    if (lines[i] >= lineIndex)
+                    if (lines[i] >= insertionIndex)
                     {
                         lines[i] += 1;
                     }
                 }
             }
+        }
 
-            // 4. Index words in the new content
-            IndexWordsInLine(content, lineIndex);
-
-            // 5. If the new line is a header or section, add it to the index
+        private void AddStructuralElementsIfNeeded(string content, int lineIndex)
+        {
             if (content.StartsWith("## "))
             {
                 _headers.Add(new HeaderItem(lineIndex, content.Trim(), 2));
-                // Sort headers by line index to maintain order
                 _headers.Sort((a, b) => a.LineIndex.CompareTo(b.LineIndex));
             }
             else if (content.StartsWith("### "))
             {
                 _sections.Add(new SectionItem(lineIndex, content.Trim(), 3));
-                // Sort sections by line index to maintain order
                 _sections.Sort((a, b) => a.LineIndex.CompareTo(b.LineIndex));
             }
         }
         public IEnumerable<HeaderItem> GetAllHeaders() => _headers;
         public IEnumerable<SectionItem> GetAllSections() => _sections;
-        
+
         public Dictionary<string, List<int>> GetWordIndex() => _wordIndex;
         public IEnumerable<int> FindLinesContaining(string word)
         {
@@ -193,11 +217,11 @@ namespace scrbl.Managers
         private void BuildIndex(List<string> lines)
         {
             var startTime = DateTime.Now;
-            
+
             for (var i = 0; i < lines.Count; i++)
             {
                 var line = lines[i];
-                
+
                 if (line.StartsWith("## "))
                 {
                     _headers.Add(new HeaderItem(i, line.Trim(), 2));
@@ -206,10 +230,10 @@ namespace scrbl.Managers
                 {
                     _sections.Add(new SectionItem(i, line.Trim(), 3));
                 }
-                
+
                 IndexWordsInLine(line, i);
             }
-            
+
             var duration = DateTime.Now - startTime;
             AnsiConsole.MarkupLine($"[dim]Indexed {lines.Count} lines, {_headers.Count} headers, {_sections.Count} sections in {duration.TotalMilliseconds:F0}ms[/]");
         }
@@ -217,14 +241,13 @@ namespace scrbl.Managers
         private void IndexWordsInLine(string line, int lineIndex)
         {
             var words = line.Split([' ', '\t', '.', ',', '!', '?', ';', ':'], StringSplitOptions.RemoveEmptyEntries);
-            
+
             foreach (var word in words)
             {
                 var cleanWord = word.ToLowerInvariant().Trim();
-                if (cleanWord.Length <= 2) continue;
                 if (!_wordIndex.ContainsKey(cleanWord))
                     _wordIndex[cleanWord] = [];
-                    
+
                 _wordIndex[cleanWord].Add(lineIndex);
             }
         }

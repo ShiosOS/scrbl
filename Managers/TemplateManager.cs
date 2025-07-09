@@ -5,7 +5,7 @@
         public static string GenerateTemplate(string templateName, DateTime date)
         {
             var config = ConfigManager.LoadConfig();
-            
+
             if (!config.Templates.TryGetValue(templateName, out var template))
             {
                 throw new ArgumentException($"Template '{templateName}' not found");
@@ -17,7 +17,7 @@
             output.AddRange(template.Sections);
             output.Add("");
 
-            return string.Join(Environment.NewLine, output) + Environment.NewLine;
+            return string.Join("\n", output) + "\n";
         }
 
         public static IEnumerable<string> GetAvailableTemplateNames()
@@ -31,16 +31,16 @@
             var config = ConfigManager.LoadConfig();
             return config.Templates.ContainsKey(templateName);
         }
-        
+
         public static void AddTemplate(string name, string header, List<string>? sections = null)
         {
             var config = ConfigManager.LoadConfig();
-            
+
             config.Templates[name] = new Template
             {
                 Name = name,
                 Header = header,
-                Sections = sections ?? new List<string>()
+                Sections = sections ?? []
             };
 
             ConfigManager.SaveConfig(config);
@@ -49,7 +49,7 @@
         public static void RemoveTemplate(string name)
         {
             var config = ConfigManager.LoadConfig();
-            
+
             if (config.Templates.Remove(name))
             {
                 ConfigManager.SaveConfig(config);
