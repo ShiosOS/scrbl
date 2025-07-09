@@ -9,8 +9,8 @@
                 Template = new Template
                 {
                     Header = "## {date:yyyy.MM.dd}",
-                    Sections = new[] 
-                    { 
+                    Sections = new[]
+                    {
                         "### Daily Summary"
                     }
                 },
@@ -33,7 +33,7 @@
             output.AddRange(template.Sections);
             output.Add("");
 
-            return string.Join("\n", output) + "\n";
+            return string.Join(Environment.NewLine, output) + Environment.NewLine;
         }
 
         public static IEnumerable<string> GetAvailableTemplateNames()
