@@ -32,9 +32,9 @@ namespace scrbl.Commands
                 }
                 
                 var templateContent = TemplateManager.GenerateTemplate(templateName, DateTime.Now);
-                var notesPath = ConfigManager.LoadNotesPath();
+                var notesFile = new NotesFileManager(ConfigManager.LoadNotesPath());
                 
-                File.AppendAllText(notesPath, templateContent);
+                notesFile.AppendTemplate(templateContent);
                 
                 AnsiConsole.MarkupLine($"[green]✓[/] Template '[cyan]{templateName}[/]' added successfully!");
                 
