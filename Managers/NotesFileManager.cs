@@ -1,4 +1,5 @@
 ﻿using Spectre.Console;
+using System.Text.RegularExpressions;
 
 namespace scrbl.Managers
 {
@@ -13,36 +14,36 @@ namespace scrbl.Managers
         public bool AddToLastHeader(string content)
         {
             var index = GetIndex();
-            var lastHeader = index.GetLastHeader();
+            var lastHeader = index.GetLastHeader(level: 2); 
             if (lastHeader == null)
                 return false;
 
             var insertIndex = FindContentInsertionPoint(lastHeader.LineIndex);
             _lines.Insert(insertIndex, content);
             
-            // Update the index incrementally
             index.InsertLineAt(insertIndex, content);
             SaveUpdatedIndex();
             
             return true;
         }
 
-        public bool AddToSection(string sectionName, string content)
+        public bool AddToSection(string sectionName, string content, int targetLevel = 3)
         {
             var index = GetIndex();
-            var lastHeader = index.GetLastHeader();
+            var lastHeader = index.GetLastHeader(level: 2); 
             if (lastHeader == null)
                 return false;
 
-            var sectionHeader = FormatSectionHeader(sectionName);
-            var section = index.FindSectionUnderHeader(lastHeader, sectionHeader);
+            var formattedSectionHeader = FormatSectionHeader(sectionName, targetLevel);
+            
+            var section = index.FindHeadingUnderParent(lastHeader, formattedSectionHeader, targetLevel);
+            
             if (section == null)
                 return false;
 
             var insertIndex = FindContentInsertionPoint(section.LineIndex);
             _lines.Insert(insertIndex, content);
             
-            // Update the index incrementally
             index.InsertLineAt(insertIndex, content);
             SaveUpdatedIndex();
             
@@ -51,33 +52,26 @@ namespace scrbl.Managers
 
         public void AppendTemplate(string templateContent)
         {
-            var needsNewline = File.Exists(filePath) && new FileInfo(filePath).Length > 0 && !File.ReadAllText(filePath).EndsWith('\n');
-            var contentToAppend = needsNewline ? "\n" + templateContent : templateContent;
+            File.AppendAllText(filePath, templateContent);
             
-            File.AppendAllText(filePath, contentToAppend);
-            // Reload lines after template addition
             _lines = File.ReadAllText(filePath).Split(["\r\n", "\n"], StringSplitOptions.None).ToList();
             
-            // Template changes are structural - force rebuild
             InvalidateIndex();
         }
 
         public void Save()
         {
-            File.WriteAllText(filePath, string.Join("\n", _lines));
-            
-            // Update the saved index timestamp to match file
+            File.WriteAllText(filePath, string.Join(Environment.NewLine, _lines));
             UpdateIndexTimestamp();
         }
 
         private void UpdateIndexTimestamp()
         {
             var persistentIndex = NotesIndexManager.LoadIndex(_indexPath);
-            if (persistentIndex != null)
-            {
-                persistentIndex.FileTimestamp = File.GetLastWriteTime(filePath);
-                NotesIndexManager.SaveIndex(_indexPath, persistentIndex);
-            }
+            if (persistentIndex == null) return;
+            
+            persistentIndex.FileTimestamp = File.GetLastWriteTime(filePath);
+            NotesIndexManager.SaveIndex(_indexPath, persistentIndex);
         }
 
         private NotesIndex GetIndex()
@@ -88,6 +82,7 @@ namespace scrbl.Managers
             var fileTimestamp = File.GetLastWriteTime(filePath);
             var persistentIndex = NotesIndexManager.LoadIndex(_indexPath);
 
+            // Check if persistent index exists and is up-to-date
             if (persistentIndex != null && persistentIndex.FileTimestamp >= fileTimestamp)
             {
                 AnsiConsole.MarkupLine("[dim]Using cached index...[/]");
@@ -97,7 +92,7 @@ namespace scrbl.Managers
             {
                 AnsiConsole.MarkupLine("[dim]Building index...[/]");
                 _index = new NotesIndex(_lines);
-                SaveUpdatedIndex();
+                SaveUpdatedIndex(); 
             }
 
             return _index;
@@ -108,83 +103,54 @@ namespace scrbl.Managers
             if (_index != null)
             {
                 AnsiConsole.MarkupLine("[yellow]DEBUG: Index before invalidation:[/]");
-                AnsiConsole.MarkupLine($"[dim]Headers: {string.Join(", ", _index.GetAllHeaders().Select(h => $"L{h.LineIndex}:'{h.Title}'"))}[/]");
-                AnsiConsole.MarkupLine($"[dim]Sections: {string.Join(", ", _index.GetAllSections().Select(s => $"L{s.LineIndex}:'{s.Title}'"))}[/]");
+                AnsiConsole.MarkupLine($"[dim]Headings: {string.Join(", ", _index.GetAllHeadings().Select(h => $"L{h.LineIndex}:'{h.Title}' (Level {h.Level})"))}[/]");
             }
             
-            // Just mark in-memory index as stale - don't delete the file
             _index = null;
-            // Index file stays on disk, will be overwritten on next rebuild
-        }
-        
-        private void SaveInitialIndex()
-        {
-            if (_index == null) return;
-            var fileTimestamp = File.GetLastWriteTime(filePath);
-            NotesIndexManager.SaveIndex(_indexPath, new PersistentNotesIndex
-            {
-                FileTimestamp = fileTimestamp,
-                Headers = _index.GetAllHeaders().ToList(),
-                Sections = _index.GetAllSections().ToList(),
-                WordIndex = _index.GetWordIndex()
-            });
         }
         
         private void SaveUpdatedIndex()
         {
             if (_index == null) return;
-            // Save the updated index with current timestamp
-            var fileTimestamp = DateTime.Now; // Will be updated when Save() is called
+            var fileTimestamp = DateTime.Now; 
             NotesIndexManager.SaveIndex(_indexPath, new PersistentNotesIndex
             {
                 FileTimestamp = fileTimestamp,
-                Headers = _index.GetAllHeaders().ToList(),
-                Sections = _index.GetAllSections().ToList(),
+                Headings = _index.GetAllHeadings().ToList(),
                 WordIndex = _index.GetWordIndex()
             });
         }
-
 
         private int FindContentInsertionPoint(int headerIndex)
         {
             var insertIndex = headerIndex + 1;
             
-            while (insertIndex < _lines.Count && string.IsNullOrWhiteSpace(_lines[insertIndex]))
+            // Find the next line that starts with any heading (##, ###, ####, etc.)
+            // This ensures content is inserted before the next structural element.
+            while (insertIndex < _lines.Count)
             {
-                insertIndex++;
-            }
-            
-            while (insertIndex < _lines.Count && 
-                   !_lines[insertIndex].StartsWith("## ") && 
-                   !_lines[insertIndex].StartsWith("### "))
-            {
+                // Check if the line matches any heading pattern (##, ###, ####, etc.)
+                if (Regex.IsMatch(_lines[insertIndex], @"^#+\s")) 
+                {
+                    break; // Found the next heading, so insert before it
+                }
                 insertIndex++;
             }
             
             return insertIndex;
         }
 
-        private static string FormatSectionHeader(string sectionName)
+        private static string FormatSectionHeader(string sectionName, int level)
         {
-            var hashCount = 0;
-            var cleanName = sectionName;
-            
-            while (cleanName.StartsWith("#"))
+            if (level is < 1 or > 6)
             {
-                hashCount++;
-                cleanName = cleanName.Substring(1);
+                throw new ArgumentOutOfRangeException(nameof(level), "Heading level must be between 1 and 6.");
             }
-            
-            cleanName = cleanName.Trim();
-            var totalHashes = 3 + hashCount;
-            var prefix = new string('#', totalHashes);
-            
-            return $"{prefix} {cleanName}";
+            return $"{new string('#', level)} {sectionName.Trim()}";
         }
 
         private static string GetIndexPath(string notesPath)
         {
-            // Use visible filename on Windows, hidden on Unix-like systems
             return Environment.OSVersion.Platform == PlatformID.Win32NT 
                 ? $"{notesPath}.scrbl-index"
                 : $"{notesPath}.index";
