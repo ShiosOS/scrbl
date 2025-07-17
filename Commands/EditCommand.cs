@@ -1,92 +1,69 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using scrbl.Managers;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
-namespace scrbl.Commands;
-
-public class EditCommand : Command<EditCommand.Settings>
+namespace scrbl.Commands
 {
-    public class Settings : CommandSettings
+    // Inherits from AutoSyncCommand to get automatic syncing
+    public class EditCommand : AutoSyncCommand<EditCommand.Settings>
     {
-        [CommandOption("-e|--editor")]
-        [Description("Editor to use (default: nvim)")]
-        public string? Editor { get; set; }
-    }
-
-    public override int Execute(CommandContext context, Settings settings)
-    {
-        if (!ConfigManager.IsConfigured())
+        public class Settings : CommandSettings
         {
-            AnsiConsole.MarkupLine("[red]No notes file configured. Run 'scrbl setup <path>' first.[/]");
-            return 1;
+            [CommandOption("-e|--editor")]
+            public string? Editor { get; set; }
         }
 
-        var filePath = ConfigManager.LoadNotesPath();
-        var editor = settings.Editor ?? "nvim";
-
-        try
+        // The core logic is now inside ExecuteLocalAsync
+        protected override Task<int> ExecuteLocalAsync(CommandContext context, Settings settings)
         {
-            var notesFile = new NotesFileManager(filePath);
-            notesFile.InvalidateIndex();
-            
-            AnsiConsole.MarkupLine($"[green]Opening {filePath}...[/]");
-            
-            var (fileName, arguments) = GetShellCommand(editor, filePath);
-            
-            var startInfo = new ProcessStartInfo
+            if (!ConfigManager.IsConfigured())
             {
-                FileName = fileName,
-                Arguments = arguments,
-                UseShellExecute = false,
-                RedirectStandardInput = false,
-                RedirectStandardOutput = false,
-                RedirectStandardError = false
-            };
-
-            using var process = Process.Start(startInfo);
-            
-            if (process == null)
-            {
-                AnsiConsole.MarkupLine($"[red]Failed to start {editor}[/]");
-                return 1;
+                AnsiConsole.MarkupLine("[red]No notes file configured. Run 'scrbl setup <path>' first.[/]");
+                return Task.FromResult(1);
             }
 
-            process.WaitForExit();
-            
-            var exitCode = process.ExitCode;
+            var filePath = ConfigManager.LoadNotesPath();
+            var editor = settings.Editor ?? "nvim";
 
-            if (exitCode == 0)
+            try
             {
-                AnsiConsole.MarkupLine("[green]Notes saved successfully![/]");
-                AnsiConsole.MarkupLine("[dim]Index will be rebuilt on next access[/]");
+                // Invalidate the local index before editing
+                var notesFile = new NotesFileManager(filePath);
+                notesFile.InvalidateIndex();
+                
+                AnsiConsole.MarkupLine($"[green]Opening {filePath} for editing...[/]");
+                
+                var (fileName, arguments) = GetShellCommand(editor, filePath);
+                
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = fileName,
+                    Arguments = arguments,
+                    UseShellExecute = false,
+                };
+
+                using var process = Process.Start(startInfo);
+                process?.WaitForExit();
+                
+                AnsiConsole.MarkupLine("[green]✓ Edit session finished.[/]");
+                return Task.FromResult(0); // Success
             }
-            else
+            catch (Exception ex)
             {
-                AnsiConsole.MarkupLine($"[yellow]Editor exited with code {exitCode}[/]");
+                AnsiConsole.MarkupLine($"[red]Error opening editor: {ex.Message}[/]");
+                return Task.FromResult(1); // Failure
             }
+        }
 
-            return 0;
-        }
-        catch (Exception ex)
+        private static (string fileName, string arguments) GetShellCommand(string editor, string filePath)
         {
-            AnsiConsole.MarkupLine($"[red]Error opening editor: {ex.Message}[/]");
-            return 1;
-        }
-    }
-
-    private static (string fileName, string arguments) GetShellCommand(string editor, string filePath)
-    {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            return ("cmd.exe", $"/c {editor} \"{filePath}\"");
-        }
-        else
-        {
-            var shell = Environment.GetEnvironmentVariable("SHELL") ?? "/bin/bash";
-            return (shell, $"-c '{editor} \"{filePath}\"'");
+            return RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                ? ("cmd.exe", $"/c {editor} \"{filePath}\"")
+                : (Environment.GetEnvironmentVariable("SHELL") ?? "/bin/bash", $"-c \"{editor} '{filePath}'\"");
         }
     }
 }

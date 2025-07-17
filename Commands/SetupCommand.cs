@@ -2,6 +2,8 @@
 using scrbl.Managers;
 using Spectre.Console;
 using Spectre.Console.Cli;
+using System.IO;
+using System;
 
 namespace scrbl.Commands
 {
@@ -10,51 +12,55 @@ namespace scrbl.Commands
         public class Settings : CommandSettings
         {
             [CommandArgument(0, "<PATH>")]
-            [Description("Path where notes will be stored")]
             public string Path { get; set; } = string.Empty;
+
+            [CommandOption("-u|--url <SERVER_URL>")]
+            public string? ServerUrl { get; set; }
+
+            // Add a new option to accept the API key from the command line.
+            [CommandOption("--apikey <API_KEY>")]
+            [Description("The secret API key for the remote server")]
+            public string? ApiKey { get; set; }
         }
 
         public override int Execute(CommandContext context, Settings settings)
         {
-            
-            AnsiConsole.Write(
-                new FigletText("Scrbl")
-                    .LeftJustified()
-                    .Color(Color.Pink1));
-            
-            if (string.IsNullOrEmpty(settings.Path))
-            {
-                AnsiConsole.MarkupLine("[bold red]Error:[/] Path is required");
-                return 1;
-            }
-
             try
             {
-                AnsiConsole.Status()
-                    .Start("Setting up notes directory...", ctx =>
-                    {
-                        ctx.Spinner(Spinner.Known.Star);
-                        ctx.SpinnerStyle(Style.Parse("green"));
+                var config = ConfigManager.LoadConfig();
 
-                        ConfigManager.SaveNotesPath(settings.Path);
-                        
-                        NotesIndexManager.CleanupOldIndexes(settings.Path);
-                    });
+                config.NotesFilePath = Path.Combine(settings.Path, "scrbl.md");
+                
+                if (!string.IsNullOrEmpty(settings.ServerUrl))
+                {
+                    config.ServerUrl = settings.ServerUrl;
+                }
 
-                AnsiConsole.MarkupLine($"[green]✓[/] Notes configured successfully!");
-                AnsiConsole.MarkupLine($"[dim]Location:[/] {Path.GetFullPath(settings.Path)}");
-                AnsiConsole.MarkupLine($"[dim]Config includes default 'daily' template[/]");
+                // Save the API key to the config if it was provided.
+                if (!string.IsNullOrEmpty(settings.ApiKey))
+                {
+                    config.ServerApiKey = settings.ApiKey;
+                }
 
-                var panel = new Panel(
-                        "[yellow]Next steps:[/]\n" +
-                        "• Use [cyan]scrbl create -d[/] to create daily template\n" +
-                        "• Use [cyan]scrbl write \"content\"[/] to add new notes\n" +
-                        "• Use [cyan]scrbl edit[/] to edit your notes")
-                    .Header("Getting Started")
-                    .Border(BoxBorder.Rounded)
-                    .BorderColor(Color.Green);
+                if (config.Templates.Count == 0)
+                {
+                    config.Templates = ConfigManager.GetDefaultTemplates();
+                }
+                
+                Directory.CreateDirectory(settings.Path);
 
-                AnsiConsole.Write(panel);
+                ConfigManager.SaveConfig(config);
+
+                AnsiConsole.MarkupLine("[green]✓[/] Notes configured successfully!");
+                AnsiConsole.MarkupLine($"[dim]Local Path:[/] {settings.Path}");
+                if (!string.IsNullOrEmpty(config.ServerUrl))
+                {
+                    AnsiConsole.MarkupLine($"[dim]Server URL:[/] {config.ServerUrl}");
+                }
+                if (!string.IsNullOrEmpty(config.ServerApiKey))
+                {
+                    AnsiConsole.MarkupLine("[green]API Key has been configured.[/]");
+                }
                 return 0;
             }
             catch (Exception ex)
