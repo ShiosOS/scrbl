@@ -1,67 +1,52 @@
-﻿using System.ComponentModel;
-using scrbl.Managers;
+﻿using scrbl.Managers;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
-namespace scrbl.Commands;
-
-public class WriteCommand : Command<WriteCommand.Settings>
+namespace scrbl.Commands
 {
-    public class Settings : CommandSettings
+    public class WriteCommand : AutoSyncCommand<WriteCommand.Settings>
     {
-        [CommandArgument(0, "<CONTENT>")]
-        [Description("The content to insert into notes")]
-        public string? Content { get; set; }
-        
-        [CommandOption("-s|--section")]
-        [Description("Section header for the new entry")]
-        public string? Section { get; set; }
-    }
-
-    public override int Execute(CommandContext context, Settings settings) 
-    {
-        if (!ConfigManager.IsConfigured())
+        public class Settings : CommandSettings
         {
-            AnsiConsole.MarkupLine("[red]No notes file configured. Run 'scrbl setup <path>' first.[/]");
-            return 1;
+            [CommandArgument(0, "<CONTENT>")]
+            public string? Content { get; set; }
+            
+            [CommandOption("-s|--section")]
+            public string? Section { get; set; }
         }
 
-        try
+        protected override Task<int> ExecuteLocalAsync(CommandContext context, Settings settings)
         {
-            var notesFile = new NotesFileManager(ConfigManager.LoadNotesPath());
-            var content = $"* {settings.Content}";
-
-            if (string.IsNullOrEmpty(settings.Section))
+            if (!ConfigManager.IsConfigured())
             {
-                if (!notesFile.AddToLastHeader(content))
-                {
-                    AnsiConsole.MarkupLine($"[red]No header found. Use 'scrbl create' first.[/]");
-                    return 1;
-                }
-            }
-            else
-            {
-                if (!notesFile.AddToSection(settings.Section, content))
-                {
-                    AnsiConsole.MarkupLine($"[red]Section '{settings.Section}' not found under the current header.[/]");
-                    return 1;
-                }
+                AnsiConsole.MarkupLine("[red]No notes file configured. Run 'scrbl setup <path>' first.[/]");
+                return Task.FromResult(1);
             }
 
-            notesFile.Save();
-            ShowSuccessMessage(settings.Section);
-            return 0;
-        }
-        catch (Exception ex)
-        {
-            AnsiConsole.MarkupLine($"[red]✗ Error:[/] {ex.Message}");
-            return 1;
-        }
-    }
+            try
+            {
+                var notesFile = new NotesFileManager(ConfigManager.LoadNotesPath());
+                var content = $"* {settings.Content}";
 
-    private static void ShowSuccessMessage(string? section)
-    {
-        var sectionText = !string.IsNullOrEmpty(section) ? $" under {section}" : "";
-        AnsiConsole.MarkupLine($"[green]Added entry{sectionText}[/]");
+                var success = string.IsNullOrEmpty(settings.Section)
+                    ? notesFile.AddToLastHeader(content)
+                    : notesFile.AddToSection(settings.Section, content);
+
+                if (!success)
+                {
+                    AnsiConsole.MarkupLine($"[red]Action failed. Could not find appropriate header or section.[/]");
+                    return Task.FromResult(1);
+                }
+
+                notesFile.Save();
+                AnsiConsole.MarkupLine($"[green]✓ Entry added to local notes file.[/]");
+                return Task.FromResult(0); // Success
+            }
+            catch (Exception ex)
+            {
+                AnsiConsole.MarkupLine($"[red]✗ Error:[/] {ex.Message}");
+                return Task.FromResult(1); // Failure
+            }
+        }
     }
 }

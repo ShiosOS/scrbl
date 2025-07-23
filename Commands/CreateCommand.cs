@@ -1,25 +1,23 @@
 ﻿using System.ComponentModel;
+using System.Threading.Tasks;
 using scrbl.Managers;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
 namespace scrbl.Commands
 {
-   
-    public class CreateCommand : Command<CreateCommand.Settings>
+    public class CreateCommand : AutoSyncCommand<CreateCommand.Settings>
     {
         public class Settings : CommandSettings
         {
             [CommandOption("-d|--daily")]
-            [Description("Create a daily section")]
             public bool Daily { get; set; }
             
             [CommandOption("-t|--template <TEMPLATE>")]
-            [Description("Specify template name directly")]
             public string? Template { get; set; }
         }
 
-        public override int Execute(CommandContext context, Settings settings)
+        protected override Task<int> ExecuteLocalAsync(CommandContext context, Settings settings)
         {
             try
             {
@@ -27,8 +25,7 @@ namespace scrbl.Commands
                 if (string.IsNullOrWhiteSpace(templateName))
                 {
                     AnsiConsole.MarkupLine("[yellow]No template specified![/]\n");
-                    ShowAllTemplates();
-                    return 1;
+                    return Task.FromResult(1);
                 }
                 
                 var templateContent = TemplateManager.GenerateTemplate(templateName, DateTime.Now);
@@ -36,47 +33,23 @@ namespace scrbl.Commands
                 
                 notesFile.AppendTemplate(templateContent);
                 
-                AnsiConsole.MarkupLine($"[green]✓[/] Template '[cyan]{templateName}[/]' added successfully!");
-                
-                var previewPanel = new Panel(templateContent.Trim())
-                    .Header($"Added Template: {templateName}")
-                    .Border(BoxBorder.Rounded)
-                    .BorderColor(Color.Blue);
-                
-                AnsiConsole.Write(previewPanel);
-                
-                return 0;
+                AnsiConsole.MarkupLine($"[green]✓[/] Template '[cyan]{templateName}[/]' added to local file.");
+                return Task.FromResult(0); // Success
             }
             catch (Exception ex)
             {
                 AnsiConsole.MarkupLine($"[red]✗ Error:[/] {ex.Message}");
-                return 1;
+                return Task.FromResult(1); // Failure
             }
         }
 
         private static string GetTemplateName(Settings settings)
         {
             if (settings.Daily) return "daily";
-            
             if (string.IsNullOrEmpty(settings.Template)) return string.Empty;
-            
-            if (TemplateManager.TemplateExists(settings.Template))
-            {
-                return settings.Template;
-            }
-
+            if (TemplateManager.TemplateExists(settings.Template)) return settings.Template;
             AnsiConsole.MarkupLine($"[red]Template '{settings.Template}' not found![/]");
-            ShowAllTemplates();
             return string.Empty;
-        }
-
-        private static void ShowAllTemplates()
-        {
-            AnsiConsole.MarkupLine("Available templates:");
-            foreach (var templateName in TemplateManager.GetAvailableTemplateNames())
-            {
-                AnsiConsole.MarkupLine($"  • [cyan]{templateName}[/]");
-            }
         }
     }
 }
