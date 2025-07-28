@@ -109,7 +109,8 @@ namespace scrbl.Services
             }
             else
             {
-                 AnsiConsole.MarkupLine($"[red]Error pushing changes: {await response.Content.ReadAsStringAsync()}[/]");
+		var errorContent = await response.Content.ReadAsStringAsync();
+                 AnsiConsole.MarkupLine($"[red]Error pushing changes: {Markup.Escape(errorContent)}[/]");
             }
         }
 
