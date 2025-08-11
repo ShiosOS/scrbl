@@ -31,10 +31,6 @@ namespace scrbl.Commands
 
             try
             {
-                // Invalidate the local index before editing
-                var notesFile = new NotesFileManager(filePath);
-                notesFile.InvalidateIndex();
-                
                 AnsiConsole.MarkupLine($"[green]Opening {filePath} for editing...[/]");
                 
                 var (fileName, arguments) = GetShellCommand(editor, filePath);

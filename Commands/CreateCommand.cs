@@ -12,44 +12,35 @@ namespace scrbl.Commands
         {
             [CommandOption("-d|--daily")]
             public bool Daily { get; set; }
-            
-            [CommandOption("-t|--template <TEMPLATE>")]
-            public string? Template { get; set; }
         }
 
         protected override Task<int> ExecuteLocalAsync(CommandContext context, Settings settings)
         {
             try
             {
-                var templateName = GetTemplateName(settings);
-                if (string.IsNullOrWhiteSpace(templateName))
+                string templateContent;
+                if (settings.Daily)
                 {
-                    AnsiConsole.MarkupLine("[yellow]No template specified![/]\n");
+                    var date = DateTime.Now.ToString("yyyy.MM.dd");
+                    templateContent = $"## {date}\n### Daily Summary\n\n";
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine("[yellow]Please specify --daily flag to create a daily entry[/]");
                     return Task.FromResult(1);
                 }
-                
-                var templateContent = TemplateManager.GenerateTemplate(templateName, DateTime.Now);
+
                 var notesFile = new NotesFileManager(ConfigManager.LoadNotesPath());
+                notesFile.AppendContent(templateContent);
                 
-                notesFile.AppendTemplate(templateContent);
-                
-                AnsiConsole.MarkupLine($"[green]✓[/] Template '[cyan]{templateName}[/]' added to local file.");
-                return Task.FromResult(0); // Success
+                AnsiConsole.MarkupLine("[green]✓[/] Daily entry added to notes file.");
+                return Task.FromResult(0);
             }
             catch (Exception ex)
             {
                 AnsiConsole.MarkupLine($"[red]✗ Error:[/] {ex.Message}");
-                return Task.FromResult(1); // Failure
+                return Task.FromResult(1);
             }
-        }
-
-        private static string GetTemplateName(Settings settings)
-        {
-            if (settings.Daily) return "daily";
-            if (string.IsNullOrEmpty(settings.Template)) return string.Empty;
-            if (TemplateManager.TemplateExists(settings.Template)) return settings.Template;
-            AnsiConsole.MarkupLine($"[red]Template '{settings.Template}' not found![/]");
-            return string.Empty;
         }
     }
 }

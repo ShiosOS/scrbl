@@ -19,6 +19,7 @@ namespace scrbl
                     .WithDescription("Create a templated section (auto-syncs if online)");
 
                 config.AddCommand<WriteCommand>("write")
+                    .WithAlias("w")
                     .WithDescription("Write to the notes file (auto-syncs if online)");
 
                 config.AddCommand<EditCommand>("edit")

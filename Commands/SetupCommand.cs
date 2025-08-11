@@ -42,10 +42,6 @@ namespace scrbl.Commands
                     config.ServerApiKey = settings.ApiKey;
                 }
 
-                if (config.Templates.Count == 0)
-                {
-                    config.Templates = ConfigManager.GetDefaultTemplates();
-                }
                 
                 Directory.CreateDirectory(settings.Path);
 

@@ -26,26 +26,16 @@ namespace scrbl.Commands
             try
             {
                 var notesFile = new NotesFileManager(ConfigManager.LoadNotesPath());
-                var content = $"* {settings.Content}";
+                var content = $"* {settings.Content}\n";
 
-                var success = string.IsNullOrEmpty(settings.Section)
-                    ? notesFile.AddToLastHeader(content)
-                    : notesFile.AddToSection(settings.Section, content);
-
-                if (!success)
-                {
-                    AnsiConsole.MarkupLine($"[red]Action failed. Could not find appropriate header or section.[/]");
-                    return Task.FromResult(1);
-                }
-
-                notesFile.Save();
+                notesFile.AppendContent(content);
                 AnsiConsole.MarkupLine($"[green]✓ Entry added to local notes file.[/]");
-                return Task.FromResult(0); // Success
+                return Task.FromResult(0);
             }
             catch (Exception ex)
             {
                 AnsiConsole.MarkupLine($"[red]✗ Error:[/] {ex.Message}");
-                return Task.FromResult(1); // Failure
+                return Task.FromResult(1);
             }
         }
     }

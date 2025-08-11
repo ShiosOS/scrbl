@@ -9,14 +9,6 @@ namespace scrbl.Managers
         public string NotesFilePath { get; set; } = string.Empty;
         public string ServerUrl { get; set; } = string.Empty;
         public string ServerApiKey { get; set; } = string.Empty;
-        public Dictionary<string, Template> Templates { get; set; } = new();
-    }
-
-    public class Template
-    {
-        public string Name { get; set; } = string.Empty;
-        public string Header { get; set; } = string.Empty;
-        public List<string> Sections { get; set; } = [];
     }
 
     internal static class ConfigManager
@@ -51,17 +43,5 @@ namespace scrbl.Managers
         public static string LoadServerUrl() => LoadConfig().ServerUrl;
         public static bool IsConfigured() => !string.IsNullOrEmpty(LoadNotesPath());
 
-        public static Dictionary<string, Template> GetDefaultTemplates()
-        {
-            return new Dictionary<string, Template>
-            {
-                ["daily"] = new Template
-                {
-                    Name = "daily",
-                    Header = "## {date:yyyy.MM.dd}",
-                    Sections = new List<string> { "### Daily Summary" }
-                }
-            };
-        }
     }
 }
