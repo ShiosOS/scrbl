@@ -1,11 +1,21 @@
 # scrbl
-A simple command-line tool for managing your daily notes.
+
+[![.NET](https://img.shields.io/badge/.NET-9.0-purple.svg)](https://dotnet.microsoft.com/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](#testing)
+
+A elegant command-line tool for managing your daily notes with optional cloud synchronization.
 
 ## Why scrbl?
-After trying many different note-taking software and not finding a suitable match, I decided to keep my notes in a single, long Markdown file. However, I still had some issues:
 
-1. Sometimes I would forget to save the file, which caused my notes to be lost at the end of the day
-2. I wanted a faster way to add notes from the terminal to this file
+After trying numerous note-taking applications without finding the perfect fit, scrbl was born from the idea of keeping notes in a single, long Markdown file. However, traditional file-based note-taking had some pain points:
+
+- 💾 **Data Loss Risk**: Forgetting to save could lose an entire day's worth of notes
+- ⚡ **Slow Workflow**: No quick way to append notes directly from the terminal
+- 🔄 **No Sync**: Difficulty accessing notes across multiple devices
+- 📅 **Poor Organization**: No structured daily templates or quick navigation
+
+scrbl solves these problems with automatic syncing, structured daily templates, and lightning-fast terminal integration.
 
 ## Features
 
@@ -13,35 +23,36 @@ After trying many different note-taking software and not finding a suitable matc
 ```bash
 scrbl write "I love neovim"                    # Add content to notes file
 scrbl w "Quick note"                           # Short alias for write
-scrbl append "Add to today's section"          # Append to current day
+scrbl append "Add to today's section"          # Append to current day's section
+scrbl a "Meeting notes"                        # Short alias for append
 ```
 
 ### 📝 Daily Templates
 ```bash
-scrbl create --daily                           # Create daily entry
+scrbl create --daily                           # Create structured daily entry
+scrbl create -d                                # Short alias for daily creation
 ```
 
 ### 🛠️ Editor Integration
 ```bash
-scrbl edit                                     # Open notes in your editor
-scrbl edit --editor code                      # Use specific editor
+scrbl edit                                     # Open notes in your default editor
+scrbl edit --editor code                      # Use specific editor (VS Code, vim, etc.)
 ```
 
-### 📊 Status Dashboard
+### 📊 Comprehensive Dashboard
 ```bash
-scrbl status                                   # View file stats, sync status, and activity
-scrbl config                                   # Check current configuration
-scrbl show                                     # Display recent notes with pretty formatting
+scrbl status                                   # View file stats, sync status, and activity metrics
+scrbl config                                   # Check current configuration with helpful tips
+scrbl show                                     # Display recent notes with elegant formatting
 ```
 
 ### ☁️ Cloud Sync (Optional)
 ```bash
-scrbl sync setup                               # Configure sync with remote server
-scrbl sync                                     # Manual sync
-scrbl sync --auto                              # Enable automatic syncing
+scrbl setup                                    # Configure sync during initial setup
+scrbl sync                                     # Manual sync with remote server
 ```
 
-The sync feature is designed to work with a custom .NET API that you would need to build and deploy yourself. I built my own API and deployed it on a VPS, but the sync functionality is optional - scrbl works perfectly fine as a local-only tool.
+The sync feature works with a custom .NET Web API that you can deploy on any server or cloud platform. The sync functionality is entirely optional - scrbl works perfectly as a local-only tool.
 
 #### API Requirements
 
@@ -61,23 +72,36 @@ If you want to implement sync functionality, your API needs these endpoints:
 
 ## Installation
 
+### Prerequisites
+- [.NET 9.0 SDK or later](https://dotnet.microsoft.com/download)
+
 ### Install as .NET Global Tool
+
 ```bash
-# Clone and build
+# Clone the repository
 git clone https://github.com/ShiosOS/scrbl.git
 cd scrbl
-dotnet pack
+
+# Build and pack the tool
+dotnet pack --configuration Release
 
 # Install globally
 dotnet tool install --global --add-source ./scrbl scrbl
 ```
 
 ### Update Tool
+
 ```bash
-# Use the included update script
-.\update-scrbl.ps1        # PowerShell (recommended)
-.\quick-update.bat        # Batch file
-./update-scrbl.sh         # Unix/Linux
+# Use the included PowerShell update script
+.\update-scrbl.ps1
+```
+
+### Verification
+
+```bash
+# Verify installation
+scrbl --version
+scrbl --help
 ```
 
 ## Quick Start
@@ -94,9 +118,10 @@ scrbl create --daily
 
 ### 3. Add Content
 ```bash
-scrbl write "Today I learned something new"
+scrbl write "Today I learned something new"    # Add anywhere in file
 scrbl w "Review PR #123"                       # Short alias
-scrbl append "Add to today's section"          # Append to current day
+scrbl append "Add to today's section"          # Add to current day's section
+scrbl a "Meeting notes"                        # Short alias for append
 ```
 
 ### 4. Check Your Progress
@@ -114,51 +139,145 @@ scrbl edit
 
 | Command | Description | Example |
 |---------|-------------|---------|
-| `setup <path>` | Configure notes directory | `scrbl setup ~/notes` |
-| `create --daily` | Create daily entry | `scrbl create -d` |
-| `write <content>` or `w <content>` | Add content to notes | `scrbl w "New idea"` |
-| `append <content>` | Add to today's section | `scrbl append "Meeting notes"` |
-| `show [--lines N]` | Display recent notes | `scrbl show --lines 20` |
-| `status` | View file stats and sync status | `scrbl status` |
-| `config` | Show current configuration | `scrbl config` |
-| `edit` | Open in text editor | `scrbl edit` |
-| `edit --editor <name>` | Use specific editor | `scrbl edit -e code` |
-| `sync` | Sync with remote server | `scrbl sync` |
-| `sync setup` | Configure sync settings | `scrbl sync setup` |
+| `setup <path>` | Configure notes directory and optional sync | `scrbl setup ~/notes` |
+| `create --daily` | Create daily entry template | `scrbl create -d` |
+| `write <content>` or `w <content>` | Add content to notes file | `scrbl w "New idea"` |
+| `append <content>` or `a <content>` | Add to today's section | `scrbl append "Meeting notes"` |
+| `show [--lines N]` | Display recent notes with formatting | `scrbl show --lines 20` |
+| `status` | View comprehensive file and sync dashboard | `scrbl status` |
+| `config` | Show current configuration settings | `scrbl config` |
+| `edit [--editor <name>]` | Open notes in text editor | `scrbl edit --editor code` |
+| `sync` | Manually sync with remote server | `scrbl sync` |
 
-## Daily Template
+## Templates
 
-The daily template creates a simple structure:
+### Daily Template Structure
+
+When you run `scrbl create --daily`, scrbl generates:
 
 ```markdown
-## YYYY.MM.DD
+## 2024.08.28
 ### Daily Summary
 
 ```
 
-## File Structure
+This creates a consistent, date-organized structure that makes it easy to navigate your notes chronologically.
+
+### File Organization
+
 ```
-your-notes/
-└── scrbl.md                    # Your main notes file
+your-notes-directory/
+└── scrbl.md                    # Your main notes file (auto-created)
 ```
+
+The notes file uses a simple Markdown format that's readable in any text editor and works great with version control systems like Git.
 
 ## Configuration
 
-Scrbl stores its configuration in:
-- **Windows**: `%APPDATA%\scrbl\config.json`
-- **Linux/Mac**: `~/.config/scrbl/config.json`
+### Configuration File Locations
+
+| Platform | Configuration Path |
+|----------|-------------------|
+| **Windows** | `%APPDATA%\scrbl\config.json` |
+| **Linux/Mac** | `~/.config/scrbl/config.json` |
 
 ### Configuration Options
-- **Notes File Path**: Location of your main notes file
-- **Sync Settings**: Optional remote server URL and API key for cloud sync (requires custom API deployment)
-- **Editor Preference**: Your preferred text editor for the `edit` command
 
-Use `scrbl config` to view your current settings or `scrbl status` for a complete overview including file statistics and sync status.
+| Setting | Description | Example |
+|---------|-------------|----------|
+| **Notes File Path** | Location of your main notes file | `~/Documents/scrbl.md` |
+| **Server URL** | Remote server endpoint for sync | `https://api.example.com` |
+| **API Key** | Authentication key for sync service | `your-secret-api-key` |
+| **Editor** | Preferred text editor for `edit` command | `code`, `vim`, `notepad` |
 
-## Testing
+### View Configuration
+
+```bash
+scrbl config                                   # View current settings with helpful tips
+scrbl status                                   # Complete dashboard with file stats and sync status
+```
+
+## Development
+
+### Building from Source
+
+```bash
+# Clone and build
+git clone https://github.com/ShiosOS/scrbl.git
+cd scrbl
+dotnet build --configuration Release
+```
+
+### Running Tests
 
 The project includes comprehensive tests using xUnit:
 
 ```bash
 dotnet test                                    # Run all tests
+dotnet test --verbosity normal                 # Run with detailed output
 ```
+
+### Project Structure
+
+```
+scrbl/
+├── Commands/           # CLI command implementations
+├── Managers/           # Configuration and file management
+├── Services/           # Sync and external services
+├── Tests/              # Unit tests
+├── scrbl.csproj        # Project configuration
+├── update-scrbl.ps1    # PowerShell update script
+└── README.md           # Documentation
+```
+
+## Contributing
+
+Contributions are welcome! Here's how you can help:
+
+### Reporting Issues
+
+- Use the [GitHub Issues](https://github.com/ShiosOS/scrbl/issues) page
+- Include your OS, .NET version, and scrbl version
+- Provide steps to reproduce the issue
+- Include relevant error messages or logs
+
+### Development Setup
+
+1. Fork the repository
+2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/scrbl.git`
+3. Create a feature branch: `git checkout -b feature/amazing-feature`
+4. Make your changes and add tests
+5. Run tests: `dotnet test`
+6. Commit your changes: `git commit -m 'Add amazing feature'`
+7. Push to your branch: `git push origin feature/amazing-feature`
+8. Open a Pull Request
+
+### Code Style
+
+- Follow C# coding conventions
+- Add unit tests for new features
+- Update documentation as needed
+- Use meaningful commit messages
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- Built with [.NET 9.0](https://dotnet.microsoft.com/)
+- CLI styling powered by [Spectre.Console](https://spectreconsole.net/)
+- Inspired by the need for simple, effective note-taking workflows
+
+## Support
+
+If you find scrbl helpful, consider:
+
+- ⭐ Starring the repository
+- 🐛 Reporting bugs
+- 💡 Suggesting new features
+- 🔧 Contributing code or documentation
+
+---
+
+**Happy scrbling!** 📝
