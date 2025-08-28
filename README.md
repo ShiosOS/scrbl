@@ -84,13 +84,6 @@ dotnet pack --configuration Release
 dotnet tool install --global --add-source ./scrbl scrbl
 ```
 
-### Update Tool
-
-```bash
-# Use the included PowerShell update script
-.\update-scrbl.ps1
-```
-
 ### Verification
 
 ```bash
