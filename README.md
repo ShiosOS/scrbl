@@ -18,10 +18,8 @@ scrbl solves these problems with automatic syncing, structured daily templates, 
 
 ### 🚀 Quick Note Management
 ```bash
-scrbl write "I love neovim"                    # Add content to notes file
-scrbl w "Quick note"                           # Short alias for write
-scrbl append "Add to today's section"          # Append to current day's section
-scrbl a "Meeting notes"                        # Short alias for append
+scrbl append "I love neovim"                   # Add content to today's section
+scrbl a "Quick note"                           # Short alias for append
 ```
 
 ### 📝 Daily Templates
@@ -115,10 +113,8 @@ scrbl create --daily
 
 ### 3. Add Content
 ```bash
-scrbl write "Today I learned something new"    # Add anywhere in file
-scrbl w "Review PR #123"                       # Short alias
-scrbl append "Add to today's section"          # Add to current day's section
-scrbl a "Meeting notes"                        # Short alias for append
+scrbl append "Today I learned something new"   # Add to today's section
+scrbl a "Review PR #123"                       # Short alias for append
 ```
 
 ### 4. Check Your Progress
@@ -138,7 +134,6 @@ scrbl edit
 |---------|-------------|---------|
 | `setup <path>` | Configure notes directory and optional sync | `scrbl setup ~/notes` |
 | `create --daily` | Create daily entry template | `scrbl create -d` |
-| `write <content>` or `w <content>` | Add content to notes file | `scrbl w "New idea"` |
 | `append <content>` or `a <content>` | Add to today's section | `scrbl append "Meeting notes"` |
 | `show [--lines N]` | Display recent notes with formatting | `scrbl show --lines 20` |
 | `status` | View comprehensive file and sync dashboard | `scrbl status` |

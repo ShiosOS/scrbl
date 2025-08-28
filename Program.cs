@@ -17,9 +17,6 @@ namespace scrbl
                 config.AddCommand<CreateCommand>("create")
                     .WithDescription("Create daily entry template (auto-syncs if online)");
 
-                config.AddCommand<WriteCommand>("write")
-                    .WithAlias("w")
-                    .WithDescription("Write to the notes file (auto-syncs if online)");
 
                 config.AddCommand<AppendCommand>("append")
                     .WithAlias("a")
