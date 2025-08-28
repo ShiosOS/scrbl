@@ -1,8 +1,6 @@
 # scrbl
 
 [![.NET](https://img.shields.io/badge/.NET-9.0-purple.svg)](https://dotnet.microsoft.com/)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](#testing)
 
 A elegant command-line tool for managing your daily notes with optional cloud synchronization.
 
