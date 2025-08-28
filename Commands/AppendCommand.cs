@@ -1,15 +1,15 @@
-﻿using System.ComponentModel;
-using System.Threading.Tasks;
-using scrbl.Managers;
+﻿using scrbl.Managers;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
 namespace scrbl.Commands
 {
-    public class CreateCommand : AutoSyncCommand<CreateCommand.Settings>
+    public class AppendCommand : AutoSyncCommand<AppendCommand.Settings>
     {
         public class Settings : CommandSettings
         {
+            [CommandArgument(0, "<CONTENT>")]
+            public string? Content { get; set; }
         }
 
         protected override Task<int> ExecuteLocalAsync(CommandContext context, Settings settings)
@@ -22,13 +22,20 @@ namespace scrbl.Commands
 
             try
             {
-                var date = DateTime.Now.ToString("yyyy.MM.dd");
-                var templateContent = $"---\n## {date}\n### Daily Summary\n\n---\n";
-
                 var notesFile = new NotesFileManager(ConfigManager.LoadNotesPath());
-                notesFile.AppendContent(templateContent);
+                var content = $"* {settings.Content}\n";
+
+                var addedToToday = notesFile.AppendToTodaysSection(content);
                 
-                AnsiConsole.MarkupLine("[green]✓ Daily entry added to notes file.[/]");
+                if (addedToToday)
+                {
+                    AnsiConsole.MarkupLine($"[green]✓ Entry added to today's section.[/]");
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine($"[yellow]No today's section found. Entry added to end of file.[/]");
+                }
+
                 return Task.FromResult(0);
             }
             catch (Exception ex)
