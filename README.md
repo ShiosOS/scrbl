@@ -11,9 +11,8 @@ After trying numerous note-taking applications without finding the perfect fit, 
 - 💾 **Data Loss Risk**: Forgetting to save could lose an entire day's worth of notes
 - ⚡ **Slow Workflow**: No quick way to append notes directly from the terminal
 - 🔄 **No Sync**: Difficulty accessing notes across multiple devices
-- 📅 **Poor Organization**: No structured daily templates or quick navigation
 
-scrbl solves these problems with automatic syncing, structured daily templates, and lightning-fast terminal integration.
+scrbl solves these problems with automatic syncing, structured daily templates, and terminal integration.
 
 ## Features
 
@@ -50,7 +49,7 @@ scrbl setup                                    # Configure sync during initial s
 scrbl sync                                     # Manual sync with remote server
 ```
 
-The sync feature works with a custom .NET Web API that you can deploy on any server or cloud platform. The sync functionality is entirely optional - scrbl works perfectly as a local-only tool.
+The sync feature works with a custom Web API that you can deploy on any server or cloud platform. The sync functionality is entirely optional - scrbl works perfectly as a local-only tool.
 
 #### API Requirements
 
@@ -257,9 +256,6 @@ Contributions are welcome! Here's how you can help:
 - Update documentation as needed
 - Use meaningful commit messages
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
